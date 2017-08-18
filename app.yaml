@@ -1,0 +1,19 @@
+application: gospal-176921
+runtime: go
+api_version: go1
+version: 1
+
+handlers:
+- url: /favicon.ico
+  static_files: present/static/favicon.ico
+  upload: present/static/favicon.ico
+- url: /static
+  static_dir: present/static
+  application_readable: true
+- url: /.*
+  script: _go_app
+
+# nobuild_files is a regexp that identifies which files to not build.  It
+# is useful for embedding static assets like code snippets and preventing
+# them from producing build errors for your project.
+nobuild_files: code/*

@@ -1,0 +1,190 @@
+Understanding concurrency with behavioural types
+Golang UK - 18 Aug 2017
+
+Nicholas Ng
+Imperial College London
+http://mrg.doc.ic.ac.uk
+@nicholascwng
+
+* Go and concurrency
+
+Go is known for its built-in message-passing concurrency support
+
+_"Do_not_communicate_by_sharing_memory;_instead,_share_memory_by_communicating."_
+
+- Goroutines: *Efficient* lightweight threads
+- Channels: *Simple* but expressive primitives for synchronisation
+
+But does _simple_ concurrency primitives make concurrency _easy_?
+
+* Go and concurrency
+
+Simple concurrency primitives do *not* hide the complexity of concurrency
+
+Concurrency opens up to a different class of bugs!
+
+*Concurrency*problems*
+
+- Data Race (Shared memory)
+- Mutex deadlocks (Shared memory)
+- Communication deadlocks (Message passing) *←*this*talk*
+
+What can we do about them?
+
+* Go and concurrency
+
+- Two gophers send each other a message
+- They cannot speak and listen at the same time
+- Speak (*send*) only if other side is ready to listen (*receive*)
+- Impatient gophers: both wanted to speak (*send*) before listening (*receive*)?
+- Neither can speak, both stuck waiting for each other to listen!
+
+.image images/gophers.gif 280 _
+.caption Artwork from gopherize.me / Ashley McNamara / Renee French
+
+* Go and concurrency
+
+Go runtime deadlock detector
+
+.play -edit code/deadlock.go /START OMIT/,/END OMIT/
+
+Detects deadlock when _all_ goroutines are asleep
+
+Ineffective if _partially_ deadlocked: _some_ goroutines are active
+
+* Deadlock detection
+
+In short, runtime detector is not very robust (don't rely on it!)
+
+Deadlock detection is harder than it seems
+
+- Interleaved concurrent execution: "it happens sometimes"
+- How to tell between deadlock & genuine long running computation?
+
+Maybe there are solutions in academic research?
+
+* Concurrency research
+
+Deadlock detection is an important topic in concurrency research
+
+- Most practical works focuses on _shared_memory_ and locks (e.g. Java, C++11)
+- Most message passing style concurrency are limited to theoretical works
+- Other than Erlang (actor model), lack of native concurrent programming language
+
+.link https://github.com/golang/go/wiki/ResearchPapers
+.image images/go-research.png 200 _
+
+Most research work listed *uses* Go, very few *about* Go
+
+* Understanding concurrency in Go
+
+Our research aims to apply _theoretical_ advances in concurrency
+
+- To better understand concurrency in Go
+- To use the understanding to detect concurrency problems like deadlocks
+
+* Communication deadlocks primer
+
+Channel operations (send/receive) block when the channel is not ready for it
+
+.code code/unbuffered.go /^func main/,/^}$/
+
+.code code/buffered.go /^func main/,/^}$/
+
+When a channel operation blocks *and* has no chance of unblocking → deadlock
+
+*Observation*
+
+It does not matter what values are being sent and received
+It is the _behaviour_ of *sending* and *receiving* that directly causes deadlocks
+
+* Modelling concurrency
+
+Process calculi: (e.g. CSP, CCS, π-calculus) family of models for concurrent processes
+
+.html calculi.html
+
+* Modelling concurrency
+
+Process calculi vs. Go
+
+- Formal models of concurrency
+- How concurrent processes (i.e. goroutines) *communicate* (send/receive)
+
+Compare and contrast:
+
+.image images/pi.png
+.caption Essence of concurrency: Asynchronous π-calculus & Go
+
+* Behavioural Types
+
+An abstract model of a Go program, only consists of its concurrent behaviours
+
+- Built on the foundations of process calculi as *types*
+- Abstract: data values are not important, but keep control flow structure
+- Behaviours: the message passing communication between goroutines
+
+.image images/migo-type.png
+.caption A Behavioural Type model for a Go program
+
+* A framework for deadlock detection
+
+.image images/framework.png 500 _
+.caption Using Behavioural Types to detect deadlocks. Joint work with J. Lange, B. Toninho, N. Yoshida
+
+* Deadlock detection with Behavioural Types
+
+Extract *model* from Go source code
+
+Static analysis using Go's SSA Intermediate Representation (also used by `guru` etc.)
+
+.link golang.org/x/tools/go/ssa
+
+Convert into Behavioural Type model called *MiGo*
+
+- Tailored specifically to Go: supports buffered channels, close channels
+
+.image images/framework-1.png _ 500
+
+* Deadlock detection with Behavioural Types
+
+Use a *model*checker* to check for properties in our model
+
+Check for deadlocks and more on the *MiGo* model
+
+- Model: generally treated as graph of possible executions
+- Formulae: properties of the graph
+
+e.g. Can a program always get to the end (without getting stuck/deadlock)?
+
+.image images/framework-2.png _ 500
+
+* Demo
+
+* The Dining Philosophers problem
+
+The *dining*philosophers*problem* by Edsger Dijkstra
+
+.image images/dinephil.png
+.caption source: Benjamin D. Esham / Wikimedia Commons
+
+* Omitted details
+
+_"In_theory,_there_is_no_difference_between_theory_and_practice._But,_in_practice,_there_is."_
+-- Jan L. A. van de Snepscheut
+
+- Context sensitive analysis (to extract behavioural types model)
+- Practical considerations (e.g. nil channels, data structures)
+- Termination check
+- Many more..
+
+* Concluding remarks
+
+- Concurrency primitives in Go are simple but do not make concurrency easy
+- Behavioural types - powerful abstraction to reason about concurrency in Go
+- We showed how we can use behavioural types on Go to detect deadlocks
+- We believe it could be an important utility for Go developers
+
+* Further reading
+
+.html pub.html
