@@ -138,7 +138,7 @@ Extract *model* from Go source code
 
 Static analysis using Go's SSA Intermediate Representation (also used by `guru` etc.)
 
-.link golang.org/x/tools/go/ssa
+.link http://golang.org/x/tools/go/ssa
 
 Convert into Behavioural Type model called *MiGo*
 
