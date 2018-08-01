@@ -1,7 +1,7 @@
 application: gospal-176921
 runtime: go
-api_version: go1
-version: 1
+api_version: go1.9
+version: 2
 
 handlers:
 - url: /favicon.ico
